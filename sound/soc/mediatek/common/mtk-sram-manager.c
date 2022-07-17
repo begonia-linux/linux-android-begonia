@@ -3,6 +3,7 @@
 // mtk-sram-manager.c  --  Mediatek afe sram manager
 //
 // Copyright (c) 2017 MediaTek Inc.
+// Copyright (C) 2020 XiaoMi, Inc.
 // Author: Kai Chieh Chuang <kaichieh.chuang@mediatek.com>
 
 #include <linux/module.h>
@@ -67,12 +68,13 @@ static bool mtk_audio_sram_avail(struct mtk_audio_sram *sram,
 		}
 	}
 
-	if (max_avail_size < size)
-		dev_info(sram->dev,
-			 "%s(), max_avail_size = %d, size = %d, blk_idx = %d, blk_num = %d\n",
-			 __func__, max_avail_size, size, *blk_idx, *blk_num);
+	dev_info(sram->dev, "%s(), max_avail_size = %d, size = %d, blk_idx = %d, blk_num = %d\n",
+		 __func__, max_avail_size, size, *blk_idx, *blk_num);
 
-	return max_avail_size >= size;
+	if (max_avail_size >= size)
+		return true;
+	else
+		return false;
 }
 
 int mtk_audio_sram_init(struct device *dev,
@@ -272,7 +274,7 @@ int mtk_audio_sram_free(struct mtk_audio_sram *sram, void *user)
 	unsigned int i = 0;
 	struct mtk_audio_sram_block *sram_blk = NULL;
 
-	dev_dbg(sram->dev, "%s(), user %p\n", __func__, user);
+	dev_info(sram->dev, "%s(), user %p\n", __func__, user);
 
 	spin_lock(&sram->lock);
 	for (i = 0; i < sram->block_num ; i++) {

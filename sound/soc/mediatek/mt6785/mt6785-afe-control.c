@@ -12,8 +12,7 @@
 #include "../common/mtk-sram-manager.h"
 
 #ifdef CONFIG_MTK_AUDIODSP_SUPPORT
-#include "adsp_helper.h"
-#include "adsp_platform.h"
+#include "../audio_dsp/mtk-dsp-core.h"
 #endif
 
 /* don't use this directly if not necessary */
@@ -309,7 +308,7 @@ bool mtk_audio_condition_enter_suspend(void)
 		return false;
 
 #ifdef CONFIG_MTK_AUDIODSP_SUPPORT
-	if (is_adsp_ready(ADSP_A_ID))
+	if (is_adsp_feature_registered() || is_adsp_core_ready())
 		return false;
 #endif
 
