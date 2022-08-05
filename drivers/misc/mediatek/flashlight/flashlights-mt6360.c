@@ -955,7 +955,7 @@ static void mt6360_torch_brightness_set(struct led_classdev *led_cdev,
 		if ((value > 0) && (value <= 3)) {
 			arg.level = value;
 		} else {
-		arg.level = 3;
+			arg.level = 3;
 		}
 	}
 
@@ -992,43 +992,32 @@ static void mt6360_torch2_brightness_set(struct led_classdev *led_cdev,
 	mt6360_disable(MT6360_CHANNEL_CH1);
 	mt6360_disable(MT6360_CHANNEL_CH2);
 
-	if (LED_OFF == value) {
+	if (value <= LED_OFF) {
 		arg.level = 0;
-		if (flash_is_use) {
-			pr_info("disable flashlight");
-			flash_is_use = 0;
-			mt6360_operate(MT6360_CHANNEL_CH1, MT6360_DISABLE);
-			mt6360_operate(MT6360_CHANNEL_CH2, MT6360_DISABLE);
-			mt6360_set_driver(0);
-		}
-	} else if ((value > 0) && (value <= 3)) {
-			arg.level = value;
-	} else if (value < 0) {
-		mt6360_operate(arg.channel, MT6360_DISABLE);
-		mt6360_set_driver(0);
-		return;
-	} else if ((value > 3) || (value < 255)) {
+	} else if (value <= 3) {
+		arg.level = value;
+	} else if (value > 3) {
 		arg.level = 3; //torch current 200ma
 	}
 
-	mt6360_set_driver(1);
-	mt6360_operate(MT6360_CHANNEL_CH1, MT6360_DISABLE);
-	mt6360_operate(MT6360_CHANNEL_CH2, MT6360_DISABLE);
-
-	if (0 == strcmp(led_cdev->name, "torch-light2")) {
-		flashlight_set_torch_brightness(
-			flashlight_dev_ch1, mt6360_torch_level[arg.level]);
-			mt6360_timeout_ms[MT6360_CHANNEL_CH1] = 0;
-			mt6360_en_ch1 = MT6360_ENABLE_TORCH;
-			flashlight_set_torch_brightness(
-				flashlight_dev_ch2, mt6360_torch_level[arg.level]);
-			mt6360_timeout_ms[MT6360_CHANNEL_CH2] = 0;
-			mt6360_en_ch2 = MT6360_ENABLE_TORCH;
-
-		  mt6360_enable();
+	if (!arg.level) {
+		mt6360_operate(MT6360_CHANNEL_CH1, MT6360_DISABLE);
+		mt6360_operate(MT6360_CHANNEL_CH2, MT6360_DISABLE);
+		mt6360_set_driver(0);
+		return;
 	}
 
-	return;
+	mt6360_set_driver(1);
+	flashlight_set_torch_brightness(
+		flashlight_dev_ch1, mt6360_torch_level[arg.level]);
+	mt6360_timeout_ms[MT6360_CHANNEL_CH1] = 0;
+	mt6360_en_ch1 = MT6360_ENABLE_TORCH;
+	flashlight_set_torch_brightness(
+		flashlight_dev_ch2, mt6360_torch_level[arg.level]);
+	mt6360_timeout_ms[MT6360_CHANNEL_CH2] = 0;
+	mt6360_en_ch2 = MT6360_ENABLE_TORCH;
+
+	mt6360_enable();
 }
 
 static enum led_brightness mtk_pmic_flashlight_brightness_get(struct led_classdev *led_cdev)
@@ -1068,8 +1057,9 @@ static struct led_classdev mtk_torch_led[MT6360_CHANNEL_NUM + 1] = {
 		.brightness_set = mt6360_torch_brightness_set,
 		.brightness = LED_OFF,
 	},
+	// Ubuntu Touch indicator-power tries torch-light first
 	{
-		.name = "torch-light2",
+		.name = "torch-light",
 		.brightness_set = mt6360_torch2_brightness_set,
 		.brightness = LED_OFF,
 	},
