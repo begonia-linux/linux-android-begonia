@@ -96,7 +96,7 @@ root_schedtune = {
  *    implementation especially for the computation of the per-CPU boost
  *    value
  */
-#ifdef CONFIG_MTK_IO_BOOST
+/* #ifdef CONFIG_MTK_IO_BOOST */ 
 #define BOOSTGROUPS_COUNT 16
 
 /* Array of configured boostgroups */
