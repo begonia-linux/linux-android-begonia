@@ -3640,6 +3640,7 @@ static bool binder_proc_transaction(struct binder_transaction *t,
 				pr_info("%d not applying gbinder workaround, context %s is not hwbinder\n",
 						proc->pid, proc->context->name);
 				pending_async = true;
+			}
 		} else {
 			node->has_async_transaction = true;
 		}
