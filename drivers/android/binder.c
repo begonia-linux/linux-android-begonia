@@ -409,7 +409,7 @@ struct binder_transaction_log_entry entry_t[MAX_ENG_TRANS_LOG_BUFF_LEN];
 struct binder_work {
 	struct list_head entry;
 
-	enum {
+	enum binder_work_type {
 		BINDER_WORK_TRANSACTION = 1,
 		BINDER_WORK_TRANSACTION_COMPLETE,
 		BINDER_WORK_RETURN_ERROR,
@@ -1646,27 +1646,6 @@ static struct binder_work *binder_dequeue_work_head_ilocked(
 	return w;
 }
 
-/**
- * binder_dequeue_work_head() - Dequeues the item at head of list
- * @proc:         binder_proc associated with list
- * @list:         list to dequeue head
- *
- * Removes the head of the list if there are items on the list
- *
- * Return: pointer dequeued binder_work, NULL if list was empty
- */
-static struct binder_work *binder_dequeue_work_head(
-					struct binder_proc *proc,
-					struct list_head *list)
-{
-	struct binder_work *w;
-
-	binder_inner_proc_lock(proc);
-	w = binder_dequeue_work_head_ilocked(list);
-	binder_inner_proc_unlock(proc);
-	return w;
-}
-
 static void
 binder_defer_work(struct binder_proc *proc, enum binder_deferred_state defer);
 static void binder_free_thread(struct binder_thread *thread);
@@ -2089,8 +2068,7 @@ static struct binder_node *binder_init_node_ilocked(
 		FLAT_BINDER_FLAG_SCHED_POLICY_SHIFT;
 	node->min_priority = to_kernel_prio(node->sched_policy, priority);
 	node->accept_fds = !!(flags & FLAT_BINDER_FLAG_ACCEPTS_FDS);
-/*	node->inherit_rt = !!(flags & FLAT_BINDER_FLAG_INHERIT_RT);*/
-	node->inherit_rt = true;
+	node->inherit_rt = !!(flags & FLAT_BINDER_FLAG_INHERIT_RT);
 	node->txn_security_ctx = 0; /*!!(flags & FLAT_BINDER_FLAG_TXN_SECURITY_CTX);*/
 	spin_lock_init(&node->lock);
 	INIT_LIST_HEAD(&node->work.entry);
@@ -2843,12 +2821,6 @@ static struct binder_thread *binder_get_txn_from_and_acq_inner(
 
 static void binder_free_transaction(struct binder_transaction *t)
 {
-#ifdef BINDER_WATCHDOG
-	binder_cancel_bwdog(t);
-#endif
-#ifdef BINDER_USER_TRACKING
-	binder_print_delay(t);
-#endif
 	struct binder_proc *target_proc = t->to_proc;
 
 	if (target_proc) {
@@ -2857,6 +2829,12 @@ static void binder_free_transaction(struct binder_transaction *t)
 			t->buffer->transaction = NULL;
 		binder_inner_proc_unlock(target_proc);
 	}
+#ifdef BINDER_WATCHDOG
+	binder_cancel_bwdog(t);
+#endif
+#ifdef BINDER_USER_TRACKING
+	binder_print_delay(t);
+#endif
 	/*
 	 * If the transaction has no target_proc, then
 	 * t->buffer->transaction has already been cleared.
@@ -3632,10 +3610,7 @@ static bool binder_proc_transaction(struct binder_transaction *t,
 	if (oneway) {
 		BUG_ON(thread);
 		if (node->has_async_transaction) {
-				// Halium: possible libgbinder bug workaround
-			/*pending_async = true;*/
-			pr_info("%d has pending async transaction, but still adding a new transaction to todo list (gbinder bug workaround)\n",
-							proc->pid);
+			pending_async = true;
 		} else {
 			node->has_async_transaction = true;
 		}
@@ -3648,8 +3623,8 @@ static bool binder_proc_transaction(struct binder_transaction *t,
 		binder_node_unlock(node);
 		return false;
 	}
-
-	if (!thread && !pending_async)
+	//hallium changes
+	if (!thread /* && !pending_async */)
 		thread = binder_select_thread_ilocked(proc);
 
 	if (thread) {
@@ -3659,7 +3634,17 @@ static bool binder_proc_transaction(struct binder_transaction *t,
 	} else if (!pending_async) {
 		binder_enqueue_work_ilocked(&t->work, &proc->todo);
 	} else {
-		binder_enqueue_work_ilocked(&t->work, &node->async_todo);
+		if (!strcmp(proc->context->name, "hwbinder")) {
+			// Halium: possible libgbinder bug workaround
+			pr_info("%d has pending async transaction, but still adding a new transaction to todo list (gbinder bug workaround)\n",
+					proc->pid);
+			binder_enqueue_work_ilocked(&t->work, &proc->todo);
+			pending_async = false;
+		} else {
+			pr_info("%d not applying gbinder workaround, context %s is not hwbinder\n",
+					proc->pid, proc->context->name);
+			binder_enqueue_work_ilocked(&t->work, &node->async_todo);
+		}
 	}
 
 	if (!pending_async)
@@ -4217,7 +4202,7 @@ static void binder_transaction(struct binder_proc *proc,
 			binder_size_t parent_offset;
 			struct binder_fd_array_object *fda =
 				to_binder_fd_array_object(hdr);
-			size_t num_valid = (buffer_offset - off_start_offset) *
+			size_t num_valid = (buffer_offset - off_start_offset) /
 						sizeof(binder_size_t);
 			struct binder_buffer_object *parent =
 				binder_validate_ptr(target_proc, t->buffer,
@@ -4291,7 +4276,7 @@ static void binder_transaction(struct binder_proc *proc,
 				t->buffer->user_data + sg_buf_offset;
 			sg_buf_offset += ALIGN(bp->length, sizeof(u64));
 
-			num_valid = (buffer_offset - off_start_offset) *
+			num_valid = (buffer_offset - off_start_offset) /
 					sizeof(binder_size_t);
 			ret = binder_fixup_parent(t, thread, bp,
 						  off_start_offset,
@@ -4666,7 +4651,8 @@ static int binder_thread_write(struct binder_proc *proc,
 
 				buf_node = buffer->target_node;
 				binder_node_inner_lock(buf_node);
-				BUG_ON(!buf_node->has_async_transaction);
+				// Halium: libgbinder workaround
+				/*BUG_ON(!buf_node->has_async_transaction);*/
 				BUG_ON(buf_node->proc != proc);
 				w = binder_dequeue_work_head_ilocked(
 						&buf_node->async_todo);
@@ -5285,8 +5271,6 @@ retry:
 			trd->sender_pid =
 				task_tgid_nr_ns(sender,
 						task_active_pid_ns(current));
-			if (binder_global_pid_lookups && trd->sender_pid == 0)
-						trd->sender_pid = task_tgid_nr(sender);
 		} else {
 			trd->sender_pid = 0;
 		}
@@ -5403,13 +5387,17 @@ static void binder_release_work(struct binder_proc *proc,
 				struct list_head *list)
 {
 	struct binder_work *w;
+	enum binder_work_type wtype;
 
 	while (1) {
-		w = binder_dequeue_work_head(proc, list);
+		binder_inner_proc_lock(proc);
+		w = binder_dequeue_work_head_ilocked(list);
+		wtype = w ? w->type : 0;
+		binder_inner_proc_unlock(proc);
 		if (!w)
 			return;
 
-		switch (w->type) {
+		switch (wtype) {
 		case BINDER_WORK_TRANSACTION: {
 			struct binder_transaction *t;
 
@@ -5443,9 +5431,11 @@ static void binder_release_work(struct binder_proc *proc,
 			kfree(death);
 			binder_stats_deleted(BINDER_STAT_DEATH);
 		} break;
+		case BINDER_WORK_NODE:
+			break;
 		default:
 			pr_err("unexpected work type, %d, not freed\n",
-			       w->type);
+			       wtype);
 			break;
 		}
 	}
