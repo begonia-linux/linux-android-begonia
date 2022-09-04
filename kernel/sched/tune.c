@@ -96,8 +96,11 @@ root_schedtune = {
  *    implementation especially for the computation of the per-CPU boost
  *    value
  */
-/* #ifdef CONFIG_MTK_IO_BOOST */ 
-#define BOOSTGROUPS_COUNT 16
+#ifdef CONFIG_MTK_IO_BOOST
+#define BOOSTGROUPS_COUNT 6
+#else
+#define BOOSTGROUPS_COUNT 5
+#endif
 
 /* Array of configured boostgroups */
 static struct schedtune *allocated_group[BOOSTGROUPS_COUNT] = {
@@ -829,6 +832,12 @@ schedtune_css_alloc(struct cgroup_subsys_state *parent_css)
 	if (!parent_css)
 		return &root_schedtune.css;
 
+	/* Allow only single level hierachies */
+	if (parent_css != &root_schedtune.css) {
+		pr_err("Nested SchedTune boosting groups not allowed\n");
+		return ERR_PTR(-ENOMEM);
+	}
+
 	/* Allow only a limited number of boosting groups */
 	for (idx = 1; idx < BOOSTGROUPS_COUNT; ++idx)
 		if (!allocated_group[idx])
@@ -884,7 +893,6 @@ struct cgroup_subsys schedtune_cgrp_subsys = {
 	.css_free	= schedtune_css_free,
 	.can_attach     = schedtune_can_attach,
 	.cancel_attach  = schedtune_cancel_attach,
-	.dfl_cftypes = files,
 	.legacy_cftypes	= files,
 	.early_init	= 1,
 };
