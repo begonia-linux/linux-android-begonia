@@ -32,10 +32,10 @@
 
 bool is_audio_use_adsp(const uint32_t dsp_id)
 {
-#if !defined(CONFIG_MTK_AUDIODSP_SUPPORT)
-	return false;
-#else
+#ifdef (CONFIG_MTK_AUDIODSP_SUPPORT)
 	return (dsp_id == AUDIO_OPENDSP_USE_HIFI3_A);
+#else
+	return false;
 #endif
 }
 
