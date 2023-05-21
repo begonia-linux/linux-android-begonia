@@ -48,7 +48,7 @@ KERNEL_IMAGE_WITH_DTB = 1
 # Path to the DTB
 # If you leave this undefined, an attempt to find it automatically
 # will be made.
-#KERNEL_IMAGE_DTB = arch/arm64/boot/dts/qcom/my_dtb.dtb
+KERNEL_IMAGE_DTB = arch/arm64/boot/dts/mediatek/mt6785.dtb
 
 # Whether to include a DTB Overlay. Use 0 (no) or 1.
 KERNEL_IMAGE_WITH_DTB_OVERLAY = 1
@@ -56,12 +56,12 @@ KERNEL_IMAGE_WITH_DTB_OVERLAY = 1
 # Path to the DTB overlay.
 # If you leave this undefined, an attempt to find it automatically
 # will be made.
-#KERNEL_IMAGE_DTB_OVERLAY = arch/arm64/boot/dts/qcom/my_overlay.dtbo
+KERNEL_IMAGE_DTB_OVERLAY = arch/arm64/boot/dts/mediatek/begonia-mt6785-overlay.dtb
 
 # Whether to include the DTB Overlay into the kernel image
 # Use 0 (no, default) or 1.
 # dtbo.img will always be shipped in the linux-bootimage- package.
-KERNEL_IMAGE_WITH_DTB_OVERLAY_IN_KERNEL = 0
+KERNEL_IMAGE_WITH_DTB_OVERLAY_IN_KERNEL = 1
 
 # Path to a specifc configuration file for mkdtboimg.
 # The default is to leave it undefined.
@@ -69,7 +69,7 @@ KERNEL_IMAGE_WITH_DTB_OVERLAY_IN_KERNEL = 0
 
 # Path to the DTB directory. Only define if KERNEL_IMAGE_DTB_OVERLAY_CONFIGURATION
 # is defined too.
-#KERNEL_IMAGE_DTB_OVERLAY_DTB_DIRECTORY = arch/arm64/boot/dts/qcom
+#KERNEL_IMAGE_DTB_OVERLAY_DTB_DIRECTORY = arch/arm64/boot/dts/mediatek
 
 # Various other settings that will be passed straight to mkbootimg
 KERNEL_BOOTIMAGE_PAGE_SIZE = 2048
@@ -112,7 +112,7 @@ DEVICE_VBMETA_IS_SAMSUNG = 0
 ########################################################################
 
 # Whether to enable kernel upgrades on package upgrades. Use 0 (no) or 1.
-FLASH_ENABLED = 0
+FLASH_ENABLED = 1
 
 # If your device is treble-ized, but aonly, you should set the following to
 # 1 (yes).
