@@ -43,7 +43,7 @@ KERNEL_CONFIG_USE_DIFFCONFIG = 0
 KERNEL_DEFCONFIG = begonia_user_defconfig
 
 # Whether to include DTBs with the image. Use 0 (no) or 1.
-KERNEL_IMAGE_WITH_DTB = 0
+KERNEL_IMAGE_WITH_DTB = 1
 
 # Path to the DTB
 # If you leave this undefined, an attempt to find it automatically
@@ -51,7 +51,7 @@ KERNEL_IMAGE_WITH_DTB = 0
 KERNEL_IMAGE_DTB = arch/arm64/boot/dts/mediatek/mt6785.dtb
 
 # Whether to include a DTB Overlay. Use 0 (no) or 1.
-KERNEL_IMAGE_WITH_DTB_OVERLAY = 0
+KERNEL_IMAGE_WITH_DTB_OVERLAY = 1
 
 # Path to the DTB overlay.
 # If you leave this undefined, an attempt to find it automatically
@@ -116,7 +116,7 @@ FLASH_ENABLED = 1
 
 # If your device is treble-ized, but aonly, you should set the following to
 # 1 (yes).
-FLASH_IS_AONLY = 0
+FLASH_IS_AONLY = 1
 
 # `flash-bootimage` defaults are enough for most recent devices, but legacy
 # devices won't work out of the box.
@@ -166,12 +166,12 @@ BUILD_CC = clang
 
 # Extra paths to prepend to the PATH variable. You'll probably want
 # to specify the clang path here (the default).
-BUILD_PATH = /usr/lib/llvm-android-6.0-4691093/bin
+BUILD_PATH = /usr/lib/llvm-android-9.0-r353983c/bin
 
 # Extra packages to add to the Build-Depends section. Mainline builds
 # can have this section empty, unless cross-building.
 # The default is enough to install the Android toolchain, including clang.
-DEB_TOOLCHAIN = linux-initramfs-halium-generic:arm64, binutils-aarch64-linux-gnu, clang-android-6.0-4691093, gcc-4.9-aarch64-linux-android, g++-4.9-aarch64-linux-android, libgcc-4.9-dev-aarch64-linux-android-cross
+DEB_TOOLCHAIN = linux-initramfs-halium-generic:arm64, binutils-aarch64-linux-gnu, clang-android-9.0-r353983c, gcc-4.9-aarch64-linux-android, g++-4.9-aarch64-linux-android, libgcc-4.9-dev-aarch64-linux-android-cross
 
 # Where we're building on
 DEB_BUILD_ON = amd64
@@ -184,3 +184,6 @@ KERNEL_ARCH = arm64
 
 # Kernel target to build
 KERNEL_BUILD_TARGET = Image.gz
+
+#Trying something
+DTC_EXT=/usr/bin/dtc
