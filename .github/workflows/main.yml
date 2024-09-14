@@ -57,7 +57,7 @@ jobs:
           rm boot/dtbo.img-4.14-141-xiaomi-begonia
           rm boot/recovery.img-4.14-141-xiaomi-begonia
           cp -f /prebuiltimages/dtbo.img-4.14-141-xiaomi-begonia boot/
-          cp -f /prebuiltimages/vbmeta.img-4.14-141-xiaomi-begonia
+          cp -f /prebuiltimages/vbmeta.img-4.14-141-xiaomi-begonia boot/
           find . -type f -not -path "./DEBIAN/*" -exec md5sum {} + | sort -k 2 | sed 's/\.\/\(.*\)/\1/' > DEBIAN/md5sums
           cd /
           rm /out/$bootimagename
